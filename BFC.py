@@ -7,15 +7,10 @@ import sys
 import urllib
 import urllib.request
 import uuid
+import zipfile
+
 import oss2
 import json
-
-# 设置程序默认保存OSS服务器
-# 阿里云账号AccessKey
-auth = oss2.Auth('LTAI5tNBPod5nzCmcBPPRFjA', 'tQrxJUkhgu3KX1KraPBP2lZSmjoAZL')
-# yourEndpoint填写Bucket所在地域对应的Endpoint。Endpoint填写为https://oss-cn-chengdu.aliyuncs.com
-# 填写Bucket名称。
-bucket = oss2.Bucket(auth, 'https://oss-cn-chengdu.aliyuncs.com', 'ffxivconfig')
 
 
 # 压缩用户数据 输出对应用户ID为文件名的压缩包
@@ -46,6 +41,7 @@ def get_online_json(url):
 def welcome():
     welcome_data = get_online_json("https://portal.iinformation.info/bfc/welcom.json")
     help_len = int(len(welcome_data["Help"]))
+    anc_len = int(len(welcome_data["Announcement"]))
     print("*" * 50)
     print(welcome_data["Title"])
     print("*" * 50)
@@ -53,7 +49,7 @@ def welcome():
     for i in range(help_len):
         print(welcome_data["Help"][i])
     print("公告如下：")
-    for i in range(help_len):
+    for i in range(anc_len):
         print(welcome_data["Announcement"][i])
 
 
@@ -154,3 +150,26 @@ def download_config(user_id):
     cdn_data = get_online_json("https://portal.iinformation.info/bfc/welcom.json")
     download_url = cdn_data["ConfigCDN"] + "XIVConfig/" + user_id + "/" + user_id + ".zip"
     urllib.request.urlretrieve(download_url, "FFXIVConfig.zip")
+
+
+# 还原配置
+def retrieved(user_id):
+    print("*" * 50)
+    print("正在清理现存配置文件。。。")
+    print("*" * 50)
+    shutil.rmtree(os.getcwd() + "\\game\\My Games")
+    print("*" * 50)
+    print("正在创建配置文件夹并部署配置文件。。。")
+    print("*" * 50)
+    os.mkdir(os.getcwd() + "\\game\\My Games")
+    download_config(user_id)
+    with zipfile.ZipFile(os.getcwd() + "\\" + user_id + ".zip", 'r') as zip_ref:
+        zip_ref.extractall(os.getcwd() + "\\game\\My Games")
+
+
+# 设置程序默认保存OSS服务器
+auth = oss2.Auth(get_online_json("https://portal.iinformation.info/bfc/welcom.json")["AK"][0],
+                 get_online_json("https://portal.iinformation.info/bfc/welcom.json")["AK"][1])
+bucket = oss2.Bucket(auth, 'https://oss-cn-chengdu.aliyuncs.com', 'ffxivconfig')
+
+# ————————配置部分结束————————

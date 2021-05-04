@@ -7,8 +7,12 @@
     "4. 请确保您的My Games文件夹体积不超过10Mb"
   ],
   "Announcement": [
-    "1. ",
-    ""
+    "1. 没有哦",
+    "2. 还是没有哦"
   ],
-  "ConfigCDN": "https://ffxivconfig.oss-cn-chengdu.aliyuncs.com/"
+  "ConfigCDN": "https://ffxivconfig.oss-cn-chengdu.aliyuncs.com/",
+  "AK": [
+    "LTAI5tNBPod5nzCmcBPPRFjA",
+    "tQrxJUkhgu3KX1KraPBP2lZSmjoAZL"
+  ]
 }
