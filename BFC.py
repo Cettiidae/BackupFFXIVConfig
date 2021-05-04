@@ -39,7 +39,7 @@ def get_online_json(url):
 
 # 获取欢迎信息
 def welcome():
-    welcome_data = get_online_json("https://portal.iinformation.info/bfc/welcom.json")
+    welcome_data = get_online_json("https://portal.iinformation.info/bfc/welcome.json")
     help_len = int(len(welcome_data["Help"]))
     anc_len = int(len(welcome_data["Announcement"]))
     print("*" * 50)
@@ -77,7 +77,7 @@ def gen_user_id():
 def login():
     userid = get_user_id()
     print("*" * 50)
-    print("您当前设备的备份密钥为：", userid)
+    print("\033[1;31m您当前设备的备份密钥为：\033[0m", userid)
     print("*" * 50)
     print("您是否需要更换密钥？不正确的密钥会导致云端备份文件夹匹配失败")
     print("0：不更换 ；1：更换")
@@ -87,7 +87,7 @@ def login():
     print("*" * 50)
     # 进行密钥输出
     if key_change is "1":
-        user_id = input("请输入您的密钥：")
+        user_id = input("请输入您的密钥【该密钥仅本次有效，若需持久保存，请修改根目录下key.txt文件】：")
         print("*" * 50)
     elif key_change is "0":
         print("您将使用以下密钥完成备份还原操作：", userid)
@@ -111,16 +111,20 @@ def check_user_id(user_id):
     while True:
         if len(user_id) < 64:
             print('密钥格式有误，请勿乱输入密钥！或删除key.txt文件重试！')
+            print("*" * 50)
             sys.exit(0)
         elif wrong_regex.search(user_id) is not None:
             print('密钥包含无效字符，请重新粘贴或删除key.txt文件重试！')
+            print("*" * 50)
             sys.exit(0)
         else:
             if lower_regex.search(user_id) is None:
                 print('密钥格式有误，请勿乱输入密钥！或删除key.txt文件重试！')
+                print("*" * 50)
                 sys.exit(0)
             elif digit_regex.search(user_id) is None:
                 print('密钥格式有误，请勿乱输入密钥！或删除key.txt文件重试！')
+                print("*" * 50)
                 sys.exit(0)
             else:
                 print('密钥校验成功')
@@ -147,7 +151,7 @@ def percentage(consumed_bytes, total_bytes):
 
 # 下载文件
 def download_config(user_id):
-    cdn_data = get_online_json("https://portal.iinformation.info/bfc/welcom.json")
+    cdn_data = get_online_json("https://portal.iinformation.info/bfc/welcome.json")
     download_url = cdn_data["ConfigCDN"] + "XIVConfig/" + user_id + "/" + user_id + ".zip"
     urllib.request.urlretrieve(download_url, "FFXIVConfig.zip")
 
@@ -165,11 +169,31 @@ def retrieved(user_id):
     download_config(user_id)
     with zipfile.ZipFile(os.getcwd() + "\\" + user_id + ".zip", 'r') as zip_ref:
         zip_ref.extractall(os.getcwd() + "\\game\\My Games")
+    print("*" * 50)
+    print("正在清理下载缓存并完成还原操作。。。")
+    print("*" * 50)
+    os.remove(user_id + ".zip")
 
 
 # 设置程序默认保存OSS服务器
-auth = oss2.Auth(get_online_json("https://portal.iinformation.info/bfc/welcom.json")["AK"][0],
-                 get_online_json("https://portal.iinformation.info/bfc/welcom.json")["AK"][1])
+auth = oss2.Auth(get_online_json("https://portal.iinformation.info/bfc/welcome.json")["AK"][0],
+                 get_online_json("https://portal.iinformation.info/bfc/welcome.json")["AK"][1])
 bucket = oss2.Bucket(auth, 'https://oss-cn-chengdu.aliyuncs.com', 'ffxivconfig')
 
 # ————————配置部分结束————————
+# 欢迎界面
+welcome()
+current_user_id = check_user_id(login())
+print("请选择您需要执行的操作：")
+choice = input("1. 备份数据 ； 2.还原数据")
+if choice == "1":
+    gen_zipfile(current_user_id, os.getcwd() + "\\game\\My Games")
+    upload_config("XIVConfig/" + current_user_id + "/" + current_user_id + ".zip",
+                  os.getcwd() + "\\" + current_user_id + ".zip")
+elif choice == "2":
+    retrieved(current_user_id)
+else:
+    print("你要是乱选，我可生气了哦！")
+
+print("感谢使用，游戏愉快！")
+os.system('pause')
