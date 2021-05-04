@@ -2,14 +2,28 @@
 import hashlib
 import os
 import re
+import shutil
 import urllib.request
-import zipfile
 import uuid
 import oss2
 import json
 
 
-# 压缩用户数据
+# 压缩用户数据 输出对应用户ID为文件名的压缩包
+def gen_zipfile(user_id, user_dir):
+    shutil.make_archive(user_id, 'zip', user_dir)
+
+
+# 用户压缩后数据包大小检查   返回：Ture，大小合格，允许上传；False，文件过大或不存在，报错
+def check_size(urlin):
+    file_size = os.path.getsize(urlin)
+    file_size_mb = file_size / float(10240)
+    if file_size_mb >= 10:
+        return False
+    elif file_size_mb == 0:
+        return False
+    elif file_size_mb <= 10:
+        return True
 
 
 # 获取json
@@ -42,7 +56,7 @@ def gen_user_id():
     return user_id
 
 
-# 用户ID
+# 用户ID 返回用户需要使用的用户ID
 def login():
     print("*" * 50)
     print("您当前设备的备份密钥为：", gen_user_id())
@@ -68,7 +82,7 @@ def login():
     return user_id
 
 
-# 校验用户ID
+# 校验用户ID 请 check_user_id(login()) 以确保用户使用了合法的ID
 def check_user_id(user_id):
     lower_regex = re.compile("[a-z]")
     digit_regex = re.compile("[0-9]")
@@ -94,5 +108,3 @@ def check_user_id(user_id):
                 return user_id
 
 
-welcome()
-# check_user_id(login())
