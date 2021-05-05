@@ -171,14 +171,14 @@ def retrieved(user_id):
     print("正在部署配置文件，消耗的时长取决于您的电脑性能。")
     print("*" * 50)
     download_config(user_id)  # 下载配置
-    target_archive = user_id + '.7z'  # 解压配置
+    target_archive = "FFXIVConfig" + '.7z'  # 解压配置
     archive = py7zr.SevenZipFile(target_archive, mode='r')
     archive.extractall(path=os.getcwd() + "\\game")
     archive.close()
     print("*" * 50)
     print("正在清理下载缓存并完成还原操作。。。")
     print("*" * 50)
-    os.remove(user_id + ".7z")
+    os.remove(target_archive)
 
 
 # 设置程序默认保存OSS服务器
