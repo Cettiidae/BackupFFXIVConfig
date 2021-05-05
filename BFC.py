@@ -8,25 +8,27 @@ import urllib
 import urllib.request
 import uuid
 import zipfile
-
+import py7zr
 import oss2
 import json
 
 
-# 压缩用户数据 输出对应用户ID为文件名的压缩包
+# 压缩用户数据 输出对应用户ID为文件名的压缩包,使用第三方库 py7zr ，减少存储占用，但会增加压缩过程资源开销，请向用户说明。
 def gen_zipfile(user_id, user_dir):
-    shutil.make_archive(user_id, 'zip', user_dir)
+    user_id = user_id + '.7z'
+    with py7zr.SevenZipFile(user_id, 'w') as archive:
+        archive.writeall(user_dir, "My Games")
 
 
 # 用户压缩后数据包大小检查   返回：Ture，大小合格，允许上传；False，文件过大或不存在，报错
 def check_size(urlin):
     file_size = os.path.getsize(urlin)
-    file_size_mb = file_size / float(10240)
-    if file_size_mb >= 10:
+    file_size_mb = file_size / float(1024000)
+    if file_size_mb >= 50:
         return False
     elif file_size_mb == 0:
         return False
-    elif file_size_mb <= 10:
+    elif file_size_mb < 50:
         return True
 
 
@@ -152,27 +154,31 @@ def percentage(consumed_bytes, total_bytes):
 # 下载文件
 def download_config(user_id):
     cdn_data = get_online_json("https://portal.iinformation.info/bfc/welcome.json")
-    download_url = cdn_data["ConfigCDN"] + "XIVConfig/" + user_id + "/" + user_id + ".zip"
-    urllib.request.urlretrieve(download_url, "FFXIVConfig.zip")
+    download_url = cdn_data["ConfigCDN"] + "XIVConfig/" + user_id + "/" + user_id + ".7z"
+    urllib.request.urlretrieve(download_url, "FFXIVConfig.7z")
 
 
 # 还原配置
 def retrieved(user_id):
     print("*" * 50)
+    print("程序即将清除现有配置并开始恢复备份")
+    os.system('pause')
+    print("*" * 50)
     print("正在清理现存配置文件。。。")
     print("*" * 50)
     shutil.rmtree(os.getcwd() + "\\game\\My Games")
     print("*" * 50)
-    print("正在创建配置文件夹并部署配置文件。。。")
+    print("正在部署配置文件，消耗的时长取决于您的电脑性能。")
     print("*" * 50)
-    os.mkdir(os.getcwd() + "\\game\\My Games")
-    download_config(user_id)
-    with zipfile.ZipFile(os.getcwd() + "\\" + user_id + ".zip", 'r') as zip_ref:
-        zip_ref.extractall(os.getcwd() + "\\game\\My Games")
+    download_config(user_id)  # 下载配置
+    target_archive = user_id + '.7z'  # 解压配置
+    archive = py7zr.SevenZipFile(target_archive, mode='r')
+    archive.extractall(path=os.getcwd() + "\\game")
+    archive.close()
     print("*" * 50)
     print("正在清理下载缓存并完成还原操作。。。")
     print("*" * 50)
-    os.remove(user_id + ".zip")
+    os.remove(user_id + ".7z")
 
 
 # 设置程序默认保存OSS服务器
@@ -187,9 +193,21 @@ current_user_id = check_user_id(login())
 print("请选择您需要执行的操作：")
 choice = input("1. 备份数据 ； 2.还原数据")
 if choice == "1":
+    print("*" * 50)
+    print("正在压缩配置文件，消耗的时长取决于您的电脑性能。")
+    print("*" * 50)
     gen_zipfile(current_user_id, os.getcwd() + "\\game\\My Games")
-    upload_config("XIVConfig/" + current_user_id + "/" + current_user_id + ".zip",
-                  os.getcwd() + "\\" + current_user_id + ".zip")
+    size_check = check_size(os.getcwd() + "\\" + current_user_id + ".7z")
+    if size_check:
+        print("*" * 50)
+        print("文件大小核查通过，正在上传，请保持网络通畅。")
+        print("*" * 50)
+        upload_config("XIVConfig/" + current_user_id + "/" + current_user_id + ".7z",
+                      os.getcwd() + "\\" + current_user_id + ".7z")
+    else:
+        print("*" * 50)
+        print("文件过大或不存在，请检查您的配置目录中是否包含截图等大文件。")
+        print("*" * 50)
 elif choice == "2":
     retrieved(current_user_id)
 else:
